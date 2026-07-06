@@ -1,0 +1,80 @@
+const Asset = require('../models/Asset');
+
+// CREATE - system_admin only
+exports.createAsset = async (req, res) => {
+  try {
+    const { name, category, serialNumber, department, location, status } = req.body;
+
+    const asset = await Asset.create({
+      name,
+      category,
+      serialNumber,
+      department,
+      location,
+      status,
+      createdBy: req.user.id
+    });
+
+    res.status(201).json(asset);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// READ ALL - scoped by role
+exports.getAssets = async (req, res) => {
+  try {
+    let filter = {};
+
+    // department_head and department_staff only see their own department's assets
+    if (req.user.role === 'department_head' || req.user.role === 'department_staff') {
+      filter.department = req.user.department;
+    }
+
+    const assets = await Asset.find(filter).sort({ createdAt: -1 });
+    res.json(assets);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// READ ONE - anyone authenticated can view a single asset (needed for QR scan)
+exports.getAssetById = async (req, res) => {
+  try {
+    const asset = await Asset.findById(req.params.id);
+    if (!asset) return res.status(404).json({ message: 'Asset not found' });
+    res.json(asset);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// UPDATE - system_admin (any) or department_head (own department only)
+exports.updateAsset = async (req, res) => {
+  try {
+    const asset = await Asset.findById(req.params.id);
+    if (!asset) return res.status(404).json({ message: 'Asset not found' });
+
+    if (req.user.role === 'department_head' && asset.department !== req.user.department) {
+      return res.status(403).json({ message: 'Forbidden: not your department' });
+    }
+
+    const updated = await Asset.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// DELETE - system_admin only (already enforced at route level, but double-checked here)
+exports.deleteAsset = async (req, res) => {
+  try {
+    const asset = await Asset.findById(req.params.id);
+    if (!asset) return res.status(404).json({ message: 'Asset not found' });
+
+    await Asset.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Asset deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
