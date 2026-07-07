@@ -12,7 +12,7 @@ const assetSchema = new mongoose.Schema({
     default: 'available'
   },
   assignedTo: { type: String }, // optional: staff/technician name or ID
-  qrCodeId: { type: String, unique: true }, // will link to QR generation later
+  qrCodeId: { type: String, unique: true, sparse: true }, // will link to QR generation later
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now }
 });
