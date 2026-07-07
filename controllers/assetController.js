@@ -1,3 +1,4 @@
+const logAction = require('../middleware/auditLogger');
 const Asset = require('../models/Asset');
 
 // CREATE - system_admin only
@@ -13,6 +14,14 @@ exports.createAsset = async (req, res) => {
       location,
       status,
       createdBy: req.user.id
+    });
+
+    await logAction({
+      action: 'ASSET_CREATED',
+      performedBy: req.user.id,
+      targetType: 'Asset',
+      targetId: asset._id,
+      details: `Created asset: ${asset.name}`
     });
 
     res.status(201).json(asset);
@@ -60,6 +69,15 @@ exports.updateAsset = async (req, res) => {
     }
 
     const updated = await Asset.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    await logAction({
+      action: 'ASSET_UPDATED',
+      performedBy: req.user.id,
+      targetType: 'Asset',
+      targetId: updated._id,
+      details: `Updated asset: ${updated.name}`
+    });
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -73,8 +91,18 @@ exports.deleteAsset = async (req, res) => {
     if (!asset) return res.status(404).json({ message: 'Asset not found' });
 
     await Asset.findByIdAndDelete(req.params.id);
+
+    await logAction({
+      action: 'ASSET_DELETED',
+      performedBy: req.user.id,
+      targetType: 'Asset',
+      targetId: asset._id,
+      details: `Deleted asset: ${asset.name}`
+    });
+
     res.json({ message: 'Asset deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
