@@ -1,5 +1,6 @@
 const logAction = require('../middleware/auditLogger');
 const Asset = require('../models/Asset');
+const QRCode = require('qrcode');
 
 // CREATE - system_admin only
 exports.createAsset = async (req, res) => {
@@ -15,6 +16,14 @@ exports.createAsset = async (req, res) => {
       status,
       createdBy: req.user.id
     });
+
+    // Generate QR code encoding a verify URL pointing to this asset
+    const verifyUrl = `http://localhost:5173/verify/${asset._id}`;
+    const qrCodeImage = await QRCode.toDataURL(verifyUrl);
+
+    asset.qrCodeId = asset._id.toString();
+    asset.qrCodeImage = qrCodeImage;
+    await asset.save();
 
     await logAction({
       action: 'ASSET_CREATED',

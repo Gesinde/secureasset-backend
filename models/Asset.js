@@ -13,8 +13,10 @@ const assetSchema = new mongoose.Schema({
   },
   assignedTo: { type: String }, // optional: staff/technician name or ID
   qrCodeId: { type: String, unique: true, sparse: true }, // will link to QR generation later
+  qrCodeImage: { type: String }, // base64 data URL of the QR code
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('Asset', assetSchema);
+
