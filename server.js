@@ -17,6 +17,8 @@ app.use('/api/assets', require('./routes/assetRoutes'));
 app.use('/api/maintenance', require('./routes/maintenanceRoutes'));
 app.use('/api/audit', require('./routes/auditRoutes'));
 
+app.use('/api/security', require('./routes/securityRoutes'));
+
 app.get('/', (req, res) => {
   res.send('SecureAsset API is running');
 });
