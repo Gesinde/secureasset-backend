@@ -18,7 +18,7 @@ exports.createAsset = async (req, res) => {
     });
 
     // Generate QR code encoding a verify URL pointing to this asset
-    const verifyUrl = `http://localhost:5173/verify/${asset._id}`;
+    const verifyUrl = `https://secureasset-gnoro96ga-secure-asset.vercel.app/${asset._id}`;
     const qrCodeImage = await QRCode.toDataURL(verifyUrl);
 
     asset.qrCodeId = asset._id.toString();
