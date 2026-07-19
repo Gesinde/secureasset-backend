@@ -18,7 +18,7 @@ exports.createAsset = async (req, res) => {
     });
 
     // Generate QR code encoding a verify URL pointing to this asset
-    const verifyUrl = `https://secureasset.vercel.app/verify/<new-asset-id>`;
+    const verifyUrl = `https://secureasset.vercel.app/verify/${asset._id}`;`;
     const qrCodeImage = await QRCode.toDataURL(verifyUrl);
 
     asset.qrCodeId = asset._id.toString();
