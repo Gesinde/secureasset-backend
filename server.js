@@ -19,6 +19,8 @@ app.use('/api/audit', require('./routes/auditRoutes'));
 
 app.use('/api/security', require('./routes/securityRoutes'));
 
+app.use('/api', require('./routes/scanRoutes'));
+
 app.get('/', (req, res) => {
   res.send('SecureAsset API is running');
 });

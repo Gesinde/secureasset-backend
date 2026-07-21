@@ -26,3 +26,20 @@ exports.checkRole = (allowedRoles) => {
     next();
   };
 };
+
+
+// Attaches req.user if a valid token is present, but never blocks the request
+exports.optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = decoded;
+    } catch (err) {
+      // invalid token - just proceed as anonymous, don't block
+    }
+  }
+  next();
+};
+
