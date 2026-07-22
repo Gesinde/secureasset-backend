@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema({
     required: true
   },
   department: { type: String }, // relevant for department_head/department_staff
+  isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
