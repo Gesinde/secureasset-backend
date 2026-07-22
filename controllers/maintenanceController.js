@@ -4,11 +4,12 @@ const logAction = require('../middleware/auditLogger');
 // Raise a request - system_admin, department_head, department_staff, maintenance_officer
 exports.createRequest = async (req, res) => {
   try {
-    const { assetId, description } = req.body;
+    const { assetId, description, priority } = req.body;
 
     const request = await MaintenanceRequest.create({
       asset: assetId,
       description,
+      priority: priority || 'medium',
       raisedBy: req.user.id
     });
 
@@ -52,7 +53,6 @@ exports.updateRequest = async (req, res) => {
     const request = await MaintenanceRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ message: 'Request not found' });
 
-    // maintenance_technician can only update requests assigned to them
     if (
       req.user.role === 'maintenance_technician' &&
       request.assignedTechnician?.toString() !== req.user.id
@@ -61,7 +61,13 @@ exports.updateRequest = async (req, res) => {
     }
 
     const updateData = { ...req.body };
-    if (req.body.status === 'resolved') {
+
+    // If a technician is being assigned and no explicit status was given, auto-bump to 'assigned'
+    if (updateData.assignedTechnician && !req.body.status && request.status === 'pending') {
+      updateData.status = 'assigned';
+    }
+
+    if (updateData.status === 'resolved') {
       updateData.resolvedAt = new Date();
     }
 
