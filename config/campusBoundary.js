@@ -1,7 +1,10 @@
-// Placeholder campus boundary rectangle — replace with real Crawford University coordinates
+// Crawford University, Faith City, Igbesa, Ogun State
+// Center point: 6.5289° N, 3.1358° E
+// Boundary is a rectangle roughly ±0.005° (~550m) around the center in each direction —
+// adjust these values if the campus footprint needs to be wider or narrower
 module.exports = {
-  NORTH: 6.5385,
-  SOUTH: 6.5287,
-  EAST: 3.1395,
-  WEST: 3.1288,
+  NORTH: 6.5339,
+  SOUTH: 6.5239,
+  EAST: 3.1408,
+  WEST: 3.1308,
 };
