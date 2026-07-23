@@ -26,6 +26,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/audit-sessions', require('./routes/auditSessionRoutes'));
 
 app.get('/', (req, res) => {
   res.send('SecureAsset API is running');

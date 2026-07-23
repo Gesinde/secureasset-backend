@@ -2,6 +2,7 @@ const Asset = require('../models/Asset');
 const ScanLog = require('../models/ScanLog');
 const Notification = require('../models/Notification');
 const boundary = require('../config/campusBoundary');
+const AuditSession = require('../models/AuditSession');
 
 // Checks if a GPS point falls outside the campus boundary rectangle
 const isOutsideCampus = (lat, lng) => {
@@ -94,6 +95,21 @@ exports.recordScanAction = async (req, res) => {
       action,
       notes
     });
+
+    // If this user has an open audit session, bump the matching counter
+    const counterFieldByAction = {
+      verified: 'verifiedCount',
+      missing: 'missingCount',
+      misplaced: 'misplacedCount',
+      damaged: 'damagedCount',
+    };
+    const counterField = counterFieldByAction[action];
+    if (counterField) {
+      await AuditSession.findOneAndUpdate(
+        { openedBy: req.user.id, status: 'open' },
+        { $inc: { [counterField]: 1 } }
+      );
+    }
 
     res.status(201).json(scanLog);
   } catch (err) {
