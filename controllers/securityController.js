@@ -6,6 +6,16 @@ exports.createIncident = async (req, res) => {
   try {
     const { assetId, description, location } = req.body;
 
+    if (assetId) {
+      const existingIncident = await SecurityIncident.findOne({
+        asset: assetId,
+        status: { $ne: 'resolved' }
+      });
+      if (existingIncident) {
+        return res.status(400).json({ message: 'This asset already has an open security incident.' });
+      }
+    }
+
     const incident = await SecurityIncident.create({
       asset: assetId || undefined,
       description,

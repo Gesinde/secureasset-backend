@@ -35,6 +35,11 @@ exports.createAsset = async (req, res) => {
 
     res.status(201).json(asset);
   } catch (err) {
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern || {})[0] || 'field';
+      const fieldLabel = { serialNumber: 'serial number', assetTag: 'asset tag', qrCodeId: 'QR code' }[field] || field;
+      return res.status(400).json({ message: `An asset with this ${fieldLabel} already exists.` });
+    }
     res.status(500).json({ message: err.message });
   }
 };

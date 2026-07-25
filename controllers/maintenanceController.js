@@ -6,6 +6,14 @@ exports.createRequest = async (req, res) => {
   try {
     const { assetId, description, priority } = req.body;
 
+    const existing = await MaintenanceRequest.findOne({
+      asset: assetId,
+      status: { $in: ['pending', 'assigned', 'in_progress'] }
+    });
+    if (existing) {
+      return res.status(400).json({ message: 'This asset already has an unresolved maintenance request.' });
+    }
+
     const request = await MaintenanceRequest.create({
       asset: assetId,
       description,

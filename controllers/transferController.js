@@ -36,6 +36,15 @@ exports.createTransfer = async (req, res) => {
     const asset = await Asset.findById(assetId);
     if (!asset) return res.status(404).json({ message: 'Asset not found' });
 
+    const existingTransfer = await Transfer.findOne({
+      asset: assetId,
+      status: { $nin: ['completed', 'rejected'] }
+    });
+    if (existingTransfer) {
+      return res.status(400).json({ message: 'This asset already has a pending transfer request.' });
+    }
+    if (!asset) return res.status(404).json({ message: 'Asset not found' });
+
     if (req.user.role !== 'system_admin' && req.user.department !== asset.department) {
       return res.status(403).json({ message: 'Forbidden: asset is not in your department' });
     }
