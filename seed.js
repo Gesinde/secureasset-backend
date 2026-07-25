@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 const Asset = require('./models/Asset');
+const Department = require('./models/Department');
 
 const roles = [
   'system_admin',
@@ -27,6 +28,18 @@ const seed = async () => {
 
   await User.deleteMany({});
   await Asset.deleteMany({});
+  await Department.deleteMany({});
+
+  const departmentNames = [
+    'Economics', 'Political Science', 'Sociology', 'Mass Communication',
+    'Accounting', 'Business Administration', 'Banking and Finance',
+    'Computer Science', 'Biology', 'Chemistry', 'Physics',
+    'Microbiology', 'Biochemistry', 'Mathematics', 'Management Sciences'
+  ];
+  for (const name of departmentNames) {
+    await Department.create({ name });
+    console.log(`Created department: ${name}`);
+  }
 
   const createdUsers = {};
 
