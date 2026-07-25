@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { protect, checkRole } = require('../middleware/auth');
+
 const {
   createAsset,
   getAssets,
   getAssetById,
   updateAsset,
-  deleteAsset
+  deleteAsset,
+  assignCustodian,
+  acceptCustody
 } = require('../controllers/assetController');
 
 // All asset routes require login
@@ -26,5 +29,8 @@ router.put('/:id', checkRole(['system_admin', 'department_head']), updateAsset);
 
 // Only system_admin can delete
 router.delete('/:id', checkRole(['system_admin']), deleteAsset);
+
+router.put('/:id/assign-custodian', assignCustodian);
+router.put('/:id/accept-custody', acceptCustody);
 
 module.exports = router;

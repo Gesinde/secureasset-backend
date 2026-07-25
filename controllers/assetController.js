@@ -2,6 +2,7 @@ const logAction = require('../middleware/auditLogger');
 const Asset = require('../models/Asset');
 const QRCode = require('qrcode');
 const ScanLog = require('../models/ScanLog');
+const Notification = require('../models/Notification');
 
 // CREATE - system_admin only
 exports.createAsset = async (req, res) => {
@@ -80,7 +81,7 @@ exports.getAssets = async (req, res) => {
 // READ ONE - anyone authenticated can view a single asset (needed for QR scan)
 exports.getAssetById = async (req, res) => {
   try {
-    const asset = await Asset.findById(req.params.id);
+    const asset = await Asset.findById(req.params.id).populate('custodian', 'name role');
     if (!asset) return res.status(404).json({ message: 'Asset not found' });
 
     const lastVerified = await ScanLog.findOne({ asset: asset._id, action: 'verified' })
@@ -117,6 +118,71 @@ exports.updateAsset = async (req, res) => {
     });
 
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Assign a custodian - system_admin, or department_head of the asset's own department
+exports.assignCustodian = async (req, res) => {
+  try {
+    const { custodianId } = req.body;
+    const asset = await Asset.findById(req.params.id);
+    if (!asset) return res.status(404).json({ message: 'Asset not found' });
+
+    if (req.user.role !== 'system_admin' && !(req.user.role === 'department_head' && req.user.department === asset.department)) {
+      return res.status(403).json({ message: 'Forbidden: not authorized to assign a custodian for this asset' });
+    }
+
+    asset.custodian = custodianId;
+    asset.custodianAssignedAt = new Date();
+    asset.custodianAcceptedAt = undefined;
+    await asset.save();
+
+    await Notification.create({
+      recipient: custodianId,
+      type: 'custodian_assigned',
+      message: `You have been assigned as custodian of "${asset.name}". Please accept.`,
+      relatedId: asset._id,
+      relatedType: 'Asset'
+    });
+
+    await logAction({
+      action: 'ASSET_UPDATED',
+      performedBy: req.user.id,
+      targetType: 'Asset',
+      targetId: asset._id,
+      details: `Assigned custodian for asset: ${asset.name}`
+    });
+
+    res.json(asset);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Accept custody - only the assigned custodian themselves
+exports.acceptCustody = async (req, res) => {
+  try {
+    const asset = await Asset.findById(req.params.id);
+    if (!asset) return res.status(404).json({ message: 'Asset not found' });
+
+    if (!asset.custodian || asset.custodian.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden: you are not the assigned custodian of this asset' });
+    }
+
+    asset.custodianAcceptedAt = new Date();
+    await asset.save();
+
+    await logAction({
+      action: 'ASSET_UPDATED',
+      performedBy: req.user.id,
+      targetType: 'Asset',
+      targetId: asset._id,
+      details: `Accepted custody of asset: ${asset.name}`
+    });
+
+    res.json(asset);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

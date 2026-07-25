@@ -9,7 +9,8 @@ const notificationSchema = new mongoose.Schema({
       'transfer_request', 'transfer_approved', 'transfer_rejected',
       'borrowing_request', 'borrowing_approved', 'borrowing_overdue',
       'maintenance_assigned', 'maintenance_updated',
-      'security_incident', 'off_campus_scan', 'anonymous_scan'
+      'security_incident', 'off_campus_scan', 'anonymous_scan',
+      'custodian_assigned'
     ],
     required: true
   },
