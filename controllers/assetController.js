@@ -1,6 +1,7 @@
 const logAction = require('../middleware/auditLogger');
 const Asset = require('../models/Asset');
 const QRCode = require('qrcode');
+const ScanLog = require('../models/ScanLog');
 
 // CREATE - system_admin only
 exports.createAsset = async (req, res) => {
@@ -49,13 +50,28 @@ exports.getAssets = async (req, res) => {
   try {
     let filter = {};
 
-    // department_head and department_staff only see their own department's assets
     if (req.user.role === 'department_head' || req.user.role === 'department_staff') {
       filter.department = req.user.department;
     }
 
     const assets = await Asset.find(filter).sort({ createdAt: -1 });
-    res.json(assets);
+
+    const lastVerifiedList = await ScanLog.aggregate([
+      { $match: { action: 'verified' } },
+      { $sort: { timestamp: -1 } },
+      { $group: { _id: '$asset', lastVerifiedAt: { $first: '$timestamp' } } }
+    ]);
+    const lastVerifiedMap = {};
+    lastVerifiedList.forEach((item) => {
+      lastVerifiedMap[item._id.toString()] = item.lastVerifiedAt;
+    });
+
+    const assetsWithVerification = assets.map((a) => ({
+      ...a.toObject(),
+      lastVerifiedAt: lastVerifiedMap[a._id.toString()] || null
+    }));
+
+    res.json(assetsWithVerification);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -66,7 +82,15 @@ exports.getAssetById = async (req, res) => {
   try {
     const asset = await Asset.findById(req.params.id);
     if (!asset) return res.status(404).json({ message: 'Asset not found' });
-    res.json(asset);
+
+    const lastVerified = await ScanLog.findOne({ asset: asset._id, action: 'verified' })
+      .sort({ timestamp: -1 })
+      .select('timestamp');
+
+    res.json({
+      ...asset.toObject(),
+      lastVerifiedAt: lastVerified ? lastVerified.timestamp : null
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
