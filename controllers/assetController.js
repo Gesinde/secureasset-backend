@@ -138,6 +138,7 @@ exports.assignCustodian = async (req, res) => {
     asset.custodianAssignedAt = new Date();
     asset.custodianAcceptedAt = undefined;
     await asset.save();
+    await asset.populate('custodian', 'name role');
 
     await Notification.create({
       recipient: custodianId,
@@ -173,6 +174,7 @@ exports.acceptCustody = async (req, res) => {
 
     asset.custodianAcceptedAt = new Date();
     await asset.save();
+    await asset.populate('custodian', 'name role');
 
     await logAction({
       action: 'ASSET_UPDATED',
