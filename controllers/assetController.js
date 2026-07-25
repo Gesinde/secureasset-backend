@@ -3,6 +3,8 @@ const Asset = require('../models/Asset');
 const QRCode = require('qrcode');
 const ScanLog = require('../models/ScanLog');
 const Notification = require('../models/Notification');
+const crypto = require('crypto');
+
 
 // CREATE - system_admin only
 exports.createAsset = async (req, res) => {
@@ -20,10 +22,11 @@ exports.createAsset = async (req, res) => {
     });
 
     // Generate QR code encoding a verify URL pointing to this asset
-    const verifyUrl = `https://secureasset.vercel.app/verify/${asset._id}`;
+    const qrToken = crypto.randomBytes(12).toString('hex');
+    const verifyUrl = `https://secureasset.vercel.app/verify/${qrToken}`;
     const qrCodeImage = await QRCode.toDataURL(verifyUrl);
 
-    asset.qrCodeId = asset._id.toString();
+    asset.qrCodeId = qrToken;
     asset.qrCodeImage = qrCodeImage;
     await asset.save();
 
@@ -207,6 +210,65 @@ exports.deleteAsset = async (req, res) => {
     });
 
     res.json({ message: 'Asset deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Regenerate QR code - system_admin only. Old qrCodeId becomes invalid; a scan of it
+// should be recognized as a tampered/stale code rather than working normally.
+exports.regenerateQR = async (req, res) => {
+  try {
+    const asset = await Asset.findById(req.params.id);
+    if (!asset) return res.status(404).json({ message: 'Asset not found' });
+
+    if (asset.qrCodeId) {
+      asset.previousQrCodeIds.push(asset.qrCodeId);
+    }
+
+    const qrToken = crypto.randomBytes(12).toString('hex');
+    const verifyUrl = `https://secureasset.vercel.app/verify/${qrToken}`;
+    const qrCodeImage = await QRCode.toDataURL(verifyUrl);
+
+    asset.qrCodeId = qrToken;
+    asset.qrCodeImage = qrCodeImage;
+    await asset.save();
+
+    await logAction({
+      action: 'ASSET_UPDATED',
+      performedBy: req.user.id,
+      targetType: 'Asset',
+      targetId: asset._id,
+      details: `Regenerated QR code for asset: ${asset.name} (old code invalidated)`
+    });
+
+    res.json(asset);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Looks up an asset by its CURRENT qrCodeId token. If the token matches a PREVIOUS
+// (regenerated-away) token instead, returns a specific "stale/tampered" signal.
+exports.lookupByQrToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    const asset = await Asset.findOne({ qrCodeId: token }).populate('custodian', 'name role');
+    if (asset) {
+      return res.json({ ...asset.toObject(), qrStatus: 'valid' });
+    }
+
+    const staleAsset = await Asset.findOne({ previousQrCodeIds: token });
+    if (staleAsset) {
+      return res.status(410).json({
+        message: 'This QR code is no longer valid. It may have been replaced due to damage or a new code was issued. Please contact the asset administrator.',
+        assetName: staleAsset.name,
+        qrStatus: 'stale'
+      });
+    }
+
+    return res.status(404).json({ message: 'QR code not recognized.', qrStatus: 'unknown' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

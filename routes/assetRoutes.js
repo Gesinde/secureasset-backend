@@ -9,7 +9,9 @@ const {
   updateAsset,
   deleteAsset,
   assignCustodian,
-  acceptCustody
+  acceptCustody,
+  regenerateQR,
+  lookupByQrToken
 } = require('../controllers/assetController');
 
 // All asset routes require login
@@ -32,5 +34,8 @@ router.delete('/:id', checkRole(['system_admin']), deleteAsset);
 
 router.put('/:id/assign-custodian', assignCustodian);
 router.put('/:id/accept-custody', acceptCustody);
+
+router.put('/:id/regenerate-qr', regenerateQR);
+router.get('/qr-lookup/:token', lookupByQrToken);
 
 module.exports = router;

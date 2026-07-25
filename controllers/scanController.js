@@ -18,11 +18,20 @@ const isOutsideCampus = (lat, lng) => {
 // PUBLIC - no auth required. Returns only minimal, non-sensitive asset info.
 exports.getPublicAsset = async (req, res) => {
   try {
-    const asset = await Asset.findById(req.params.id).select(
+    const asset = await Asset.findOne({ qrCodeId: req.params.id }).select(
       'name category department status'
     );
-    if (!asset) return res.status(404).json({ message: 'Asset not found' });
-    res.json(asset);
+    if (asset) return res.json(asset);
+
+    const staleAsset = await Asset.findOne({ previousQrCodeIds: req.params.id });
+    if (staleAsset) {
+      return res.status(410).json({
+        message: 'This QR code is no longer valid. Please contact the asset administrator.',
+        qrStatus: 'stale'
+      });
+    }
+
+    res.status(404).json({ message: 'Asset not found' });
   } catch (err) {
     res.status(404).json({ message: 'Asset not found' });
   }

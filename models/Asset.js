@@ -28,6 +28,7 @@ const assetSchema = new mongoose.Schema({
   custodianAcceptedAt: { type: Date },
   qrCodeId: { type: String, unique: true, sparse: true },
   qrCodeImage: { type: String },
+  previousQrCodeIds: [{ type: String }],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now }
 });
