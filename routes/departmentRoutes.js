@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, checkRole } = require('../middleware/auth');
+const { protect, checkPermission } = require('../middleware/auth');
 const {
   getDepartments,
   createDepartment,
@@ -10,8 +10,8 @@ const {
 
 router.use(protect);
 router.get('/', getDepartments);
-router.post('/', checkRole(['system_admin']), createDepartment);
-router.put('/:id', checkRole(['system_admin']), updateDepartment);
-router.put('/:id/status', checkRole(['system_admin']), setDepartmentActiveStatus);
+router.post('/', checkPermission('department.create'), createDepartment);
+router.put('/:id', checkPermission('department.update'), updateDepartment);
+router.put('/:id/status', checkPermission('department.status'), setDepartmentActiveStatus);
 
 module.exports = router;

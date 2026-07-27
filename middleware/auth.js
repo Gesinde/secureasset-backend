@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const Permission = require('../models/Permission');
 
 // Verifies the JWT and attaches user info to req.user
 exports.protect = (req, res, next) => {
@@ -43,3 +44,23 @@ exports.optionalAuth = (req, res, next) => {
   next();
 };
 
+// Database-backed version of checkRole. Looks up the permission's current
+// allowedRoles list from the database instead of a hardcoded array in the route file.
+exports.checkPermission = (key) => {
+  return async (req, res, next) => {
+    try {
+      const permission = await Permission.findOne({ key });
+      if (!permission) {
+        // Fail closed: if a permission key doesn't exist in the DB, deny access
+        // rather than silently allowing everyone through.
+        return res.status(500).json({ message: `Permission "${key}" is not configured.` });
+      }
+      if (!permission.allowedRoles.includes(req.user.role)) {
+        return res.status(403).json({ message: 'Forbidden: insufficient role permissions' });
+      }
+      next();
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  };
+};
