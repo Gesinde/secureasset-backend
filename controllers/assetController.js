@@ -23,7 +23,7 @@ exports.createAsset = async (req, res) => {
 
     // Generate QR code encoding a verify URL pointing to this asset
     const qrToken = crypto.randomBytes(12).toString('hex');
-    const verifyUrl = `https://secureasset.vercel.app/verify/${qrToken}`;
+    const verifyUrl = `https://secureasset.vercel.app/public/asset/${qrToken}`;
     const qrCodeImage = await QRCode.toDataURL(verifyUrl);
 
     asset.qrCodeId = qrToken;
@@ -227,12 +227,13 @@ exports.regenerateQR = async (req, res) => {
     }
 
     const qrToken = crypto.randomBytes(12).toString('hex');
-    const verifyUrl = `https://secureasset.vercel.app/verify/${qrToken}`;
+    const verifyUrl = `https://secureasset.vercel.app/public/asset/${qrToken}`;
     const qrCodeImage = await QRCode.toDataURL(verifyUrl);
 
     asset.qrCodeId = qrToken;
     asset.qrCodeImage = qrCodeImage;
     await asset.save();
+    await asset.populate('custodian', 'name role');
 
     await logAction({
       action: 'ASSET_UPDATED',
