@@ -30,6 +30,8 @@ app.use('/api/audit-sessions', require('./routes/auditSessionRoutes'));
 
 app.use('/api/map', require('./routes/mapRoutes'));
 
+app.use('/api/permissions', require('./routes/permissionRoutes'));
+
 app.use('/api/departments', require('./routes/departmentRoutes'));
 
 app.get('/', (req, res) => {
