@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, checkRole } = require('../middleware/auth');
+const { protect, checkPermission } = require('../middleware/auth');
 const {
   createRequest,
   getRequests,
@@ -9,18 +9,10 @@ const {
 
 router.use(protect);
 
-router.post(
-  '/',
-  checkRole(['system_admin', 'department_head', 'department_staff', 'maintenance_officer']),
-  createRequest
-);
+router.post('/', checkPermission('maintenance.create'), createRequest);
 
 router.get('/', getRequests);
 
-router.put(
-  '/:id',
-  checkRole(['system_admin', 'maintenance_officer', 'maintenance_technician']),
-  updateRequest
-);
+router.put('/:id', checkPermission('maintenance.update'), updateRequest);
 
 module.exports = router;
