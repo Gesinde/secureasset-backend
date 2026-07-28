@@ -28,6 +28,7 @@ const permissions = [
   { key: 'auditsession.view', description: 'View all audit sessions', allowedRoles: ['system_admin', 'auditor'] },
   { key: 'auditsession.close', description: 'Close an audit session', allowedRoles: ['system_admin', 'auditor'] },
   { key: 'map.view', description: 'View the security incident map', allowedRoles: ['system_admin', 'security_officer', 'auditor'] },
+  { key: 'asset.regenerate-qr', description: 'Regenerate an asset\'s QR code', allowedRoles: ['system_admin'] },
 ];
 
 const run = async () => {
