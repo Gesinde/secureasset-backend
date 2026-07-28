@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { protect, checkPermission } = require('../middleware/auth');
-const { getStats, bootstrapPermissions, bootstrapDepartments } = require('../controllers/adminController');
 const { protect, checkRole, checkPermission } = require('../middleware/auth');
+const { getStats, bootstrapPermissions, bootstrapDepartments } = require('../controllers/adminController');
+
 
 router.use(protect);
 router.get('/stats', checkPermission('admin.stats'), getStats);
