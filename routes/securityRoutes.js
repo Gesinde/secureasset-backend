@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, checkRole } = require('../middleware/auth');
+const { protect, checkPermission } = require('../middleware/auth');
 const {
   createIncident,
   getIncidents,
@@ -9,8 +9,8 @@ const {
 
 router.use(protect);
 
-router.post('/', checkRole(['security_officer', 'system_admin']), createIncident);
-router.get('/', checkRole(['security_officer', 'system_admin', 'auditor']), getIncidents);
-router.put('/:id', checkRole(['security_officer', 'system_admin']), updateIncident);
+router.post('/', checkPermission('security.create'), createIncident);
+router.get('/', checkPermission('security.view'), getIncidents);
+router.put('/:id', checkPermission('security.update'), updateIncident);
 
 module.exports = router;
