@@ -1,5 +1,6 @@
 const MaintenanceRequest = require('../models/MaintenanceRequest');
 const logAction = require('../middleware/auditLogger');
+const Notification = require('../models/Notification');
 
 // Raise a request - system_admin, department_head, department_staff, maintenance_officer
 exports.createRequest = async (req, res) => {
@@ -27,6 +28,14 @@ exports.createRequest = async (req, res) => {
       targetType: 'MaintenanceRequest',
       targetId: request._id,
       details: `Raised maintenance request for asset ${assetId}`
+    });
+
+    await Notification.create({
+      recipientRole: 'maintenance_officer',
+      type: 'maintenance_raised',
+      message: `A new maintenance request was raised: ${description}`,
+      relatedId: request._id,
+      relatedType: 'MaintenanceRequest'
     });
 
     res.status(201).json(request);
@@ -70,10 +79,24 @@ exports.updateRequest = async (req, res) => {
 
     const updateData = { ...req.body };
 
-    // If a technician is being assigned and no explicit status was given, auto-bump to 'assigned'
-    if (updateData.assignedTechnician && !req.body.status && request.status === 'pending') {
-      updateData.status = 'assigned';
-    }
+// If a technician is being assigned and no explicit status was given, auto-bump to 'assigned'
+if (updateData.assignedTechnician && !req.body.status && request.status === 'pending') {
+  updateData.status = 'assigned';
+}
+
+if (updateData.assignedTechnician) {
+  await Notification.create({
+    recipient: updateData.assignedTechnician,
+    type: 'maintenance_assigned',
+    message: `You have been assigned a maintenance request: ${request.description}`,
+    relatedId: request._id,
+    relatedType: 'MaintenanceRequest'
+  });
+}
+
+if (updateData.status === 'resolved') {
+  updateData.resolvedAt = new Date();
+}
 
     if (updateData.status === 'resolved') {
       updateData.resolvedAt = new Date();

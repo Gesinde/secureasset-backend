@@ -1,5 +1,6 @@
 const SecurityIncident = require('../models/SecurityIncident');
 const logAction = require('../middleware/auditLogger');
+const Notification = require('../models/Notification');
 
 // Report an incident - security_officer, system_admin
 exports.createIncident = async (req, res) => {
@@ -29,6 +30,14 @@ exports.createIncident = async (req, res) => {
       targetType: 'SecurityIncident',
       targetId: incident._id,
       details: `Reported incident: ${description}`
+    });
+
+    await Notification.create({
+      recipientRole: 'security_officer',
+      type: 'security_incident',
+      message: `A new security incident was reported: ${description}`,
+      relatedId: incident._id,
+      relatedType: 'SecurityIncident'
     });
 
     res.status(201).json(incident);
